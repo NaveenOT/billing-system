@@ -33,21 +33,33 @@ db.exec(
   `CREATE TABLE IF NOT EXISTS items (name VARCHAR NOT NULL,code NUMBER PRIMARY KEY ,price NUMERIC NOT NULL);`
   );
 ipcMain.handle('additems', (event, item) => {
-  const insert = db.prepare(`INSERT INTO items (name, code, price) VALUES(?, ?, ?)`)
+  const insert = db.prepare(`INSERT INTO items (name, code, price) VALUES(?, ?, ?);`)
   const result = insert.run(item.name, item.code, item.price);
   return {success: true, id: result.lastInsertRowId};
 });
 ipcMain.handle('delitems',(event, code) =>{
   const del = db.prepare(`DELETE FROM items WHERE code = ?;`)
   const result = del.run(code);
-  return {success: true, id: result.lastDeleteRowid};
+  return {success: true, id: result.lastDeleteRowId};
 });
-ipcMain.handle('getitems', (event)=>{
+ipcMain.handle('getitems', () => {
   const select = db.prepare(`SELECT * FROM items`);
   return select.all();
 
 });
+ipcMain.handle('finditems', (event, code)=>{
+  const find = db.prepare(`SELECT * from items WHERE code = ?;`);
+  return find.get(code);
+});
 
+ipcMain.handle('updateitems', (event, item)=>{
+  const find = db.prepare(`UPDATE items
+    SET name = ?, price = ?
+    WHERE code = ?;
+    `);
+  const res = find.run(item.name,item.price, item.code);
+  return {success: true,id : res.changes};
+});
 function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),

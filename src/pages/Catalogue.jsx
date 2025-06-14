@@ -1,5 +1,5 @@
-import { useState } from "react";
-const Add = () =>{
+import { useEffect, useState } from "react";
+const Add = ({onUpdate}) =>{
     const [item, setItem] = useState(
         {
             name: "",
@@ -23,10 +23,12 @@ const Add = () =>{
             console.log(item + 'inserted');
             console.log(res.id);
         }
+        onUpdate();
         const rows = await window.api.getitems();
         console.table(rows);
         setRow(rows);
     }
+    
     return(
         <>
         <h1>Add Item</h1>
@@ -62,7 +64,7 @@ const Add = () =>{
     )
 }
 
-const Remove = () =>{
+const Remove = ({onUpdate}) =>{
     const [code, setCode] = useState(NaN);
     const [yes, setYes] = useState(false);
     const [rows, setRow] = useState([]);
@@ -75,6 +77,7 @@ const Remove = () =>{
         if(res.success){
             alert('SUCCESS');
             setYes(true);
+            onUpdate();
         }
          const rows = await window.api.getitems();
         console.table(rows);
@@ -99,12 +102,130 @@ const Remove = () =>{
 
     );
 }
-function Catalogue(){
 
+const Items = ({props}) =>{
+        const [items, setItems] = useState([]);
+        const handleLoad = async () => {
+            const rows = await window.api.getitems();
+            setItems(rows);
+        }
+        useEffect(()=>{handleLoad()}, [props]);
+        return(
+            <>
+                <table>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Price</th>
+                    </tr>
+                    {items && items.map((item, index) => (
+                        <tr key={index}>
+                            <td>{item.code}</td>
+                            <td>{item.name}</td>
+                            <td>{item.price}</td>
+                        </tr>
+                    ))}
+                </table>
+            </>
+        );
+}
+const Update = ({onUpdate})=>{
+    const [find, setFind] = useState(
+        {
+            name : "",
+            code : "",
+            price: "",
+        }
+    );
+    const [newItem, setnewItem] = useState({
+            name : "",
+            code : "",
+            price: "",
+    })
+    const [code, setCode] = useState(NaN);
+    const [isDisp, setisDisp] = useState(false);
+    
+    const handleChange = async (e) => {
+        const enteredCode = e.target.value;
+        setCode(enteredCode);
+        if (enteredCode) {
+            const row = await window.api.finditems(enteredCode);
+            if (row) {
+                setisDisp(true);
+                setFind({ name: row.name, code: row.code, price: row.price });
+                setnewItem({ name: row.name, code: row.code, price: row.price });
+            } else {
+                setisDisp(false);
+                setFind({ name: "", code: "", price: "" });
+            }
+        } else {
+            setisDisp(false);
+        }
+    };
+
+
+    const handleUpdateChange = (e) =>{
+        const { id, value } = e.target;
+        setnewItem((prevItem) =>(
+            {
+                ...prevItem,
+                [id]: value,
+            }
+        ))
+    }
+    const onUpdateSubmit = async () =>{
+        onUpdate();
+        if(newItem){
+            const res = await window.api.updateitems(newItem);
+            if(res.id > 0){
+                alert("SUCCESS");
+            }else{
+                alert("NOT FOUND")
+            }
+            setFind(newItem);
+        }
+    }
+    return (
+
+        <>
+            <h3>Update Item</h3>
+            <label htmlFor="code">Product Code</label>
+            <input type="number" placeholder="Product Code" id="code" onChange={handleChange}/>
+            {find && <h5>{find.code} | {find.name} | {find.price}</h5>}
+            {isDisp && 
+            <div>
+                <label htmlFor="code">Product Code</label>
+                <input type="number" placeholder="Product Code" id="code" value = {newItem.code} onChange={handleUpdateChange}/>
+                <label htmlFor="name">Product Name</label>
+                <input type="text" placeholder="Product Name" id="name" value = {newItem.name} onChange={handleUpdateChange}/>
+                <label htmlFor="price">Product Price</label>
+                <input type="number" placeholder="Product Price" id="price" value = {newItem.price} onChange={handleUpdateChange}/>
+                <button onClick={onUpdateSubmit} className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800">
+                <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
+                Apply Changes
+                </span>
+                </button>
+            </div>}
+        </>
+    );
+}
+function Catalogue(){
+    const [refresh, setRefresh] = useState(false);
+    const triggerRefresh = () => {
+        setRefresh((prev)=>(!prev));
+    }
+    const [tab, setTab] = useState("add");
     return(
         <>
-        <Add />
-        <Remove />
+        <div id="tab">
+            <button onClick={()=>setTab("add")}>Add Items</button>
+            <button onClick={()=>setTab("remove")}>Remove Items</button>
+            <button onClick={()=>setTab("update")}>Update Items</button>
+        </div>
+        {(tab == "add") && <Add onUpdate={triggerRefresh}/>}
+        {(tab == "remove") && <Remove onUpdate={triggerRefresh}/>}
+        {(tab == "update") && <Update onUpdate={triggerRefresh}/>}
+        <Items props={refresh}/>
         </>
     )
 }

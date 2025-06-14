@@ -23,5 +23,7 @@ electron.contextBridge.exposeInMainWorld("ipcRenderer", {
 electron.contextBridge.exposeInMainWorld("api", {
   additems: (item) => electron.ipcRenderer.invoke("additems", item),
   getitems: () => electron.ipcRenderer.invoke("getitems"),
-  delitems: (code) => electron.ipcRenderer.invoke("delitems", code)
+  delitems: (code) => electron.ipcRenderer.invoke("delitems", code),
+  finditems: (code) => electron.ipcRenderer.invoke("finditems", code),
+  updateitems: (item) => electron.ipcRenderer.invoke("updateitems", item)
 });

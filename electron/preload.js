@@ -25,4 +25,6 @@ contextBridge.exposeInMainWorld('api', {
   additems: (item)=> ipcRenderer.invoke('additems', item),
   getitems: ()=> ipcRenderer.invoke('getitems'),
   delitems: (code)=> ipcRenderer.invoke('delitems', code),
+  finditems: (code)=> ipcRenderer.invoke('finditems', code),
+  updateitems: (item)=> ipcRenderer.invoke('updateitems', item),
 });
