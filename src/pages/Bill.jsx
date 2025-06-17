@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import jsPDFInvoiceTemplate, { OutputType, jsPDF } from "jspdf-invoice-template";
 import logo from '../assets/test.jpg';
+import Swal from "sweetalert2";
+
 function Bill(){
-   
     const [items, setItems] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchItem, setSearchItem] = useState("");
@@ -19,19 +20,26 @@ function Bill(){
         const res = await window.api.getitems();
         setItems(res);
     };
+    const findItemStock = (code) =>{
+        const found = items.find((item)=> item.code ===  code);
+        return found ? found.quantity : 0;
+    }
     const addItem = (item) =>{
         const exists = (billItems.find((i) => i.code == item.code))     
         if(!exists){
-            setBillItems(
+            if(item.quantity > 0)
+            {setBillItems(
                 (prevItems) =>[
                     ...prevItems,
-                    {...item, quantity: 1},
+                    {...item, billQuantity: 1},
                 ]
-            )
+            )}
+            else{
+                alert("Item Out of Stock");}
         }
     }
     const findTotal = () =>{
-        const tot = billItems.reduce((acc, item)=> acc + (item.price * item.quantity), 0);
+        const tot = billItems.reduce((acc, item)=> acc + (item.price * item.billQuantity), 0);
         setTotal(tot);
 
     }
@@ -56,41 +64,94 @@ function Bill(){
         setShowDropdown(filtered_.length > 0);
     }
     const incQuant = (code) => {
-        setBillItems((prevItems) =>
-            prevItems.map((item) =>
-            item.code === code ? { ...item, quantity: item.quantity + 1 } : item
-            )
-        );
+        setBillItems((prevItems)=>
+            prevItems.map((item)=>{
+                const stock = findItemStock(code);
+                if(item.code === code){
+                    return {...item, billQuantity: Math.min(stock, item.billQuantity + 1)}
+                }
+                return item;
+            })
+        )
     };
     const handleQuantityChange = (code, e) =>{
-        const quant = e.target.value;
-        setBillItems((prevItems)=>{
+        const quant = parseInt(e.target.value, 10) || 0;
+        const stock = findItemStock(code);
+        const newQt = Math.min(stock, quant);
+        setBillItems((prevItems)=>
             prevItems.map((item)=>
-                item.code === code ? {...item, quantity: quant } : item
+                item.code === code ? {...item, billQuantity: newQt } : item
             )
-        })
-    }
-    const decQuant = (code) =>{
-        setBillItems((prevItems) =>
-            prevItems.map((item)=>
-                item.code === code ? {...item, quantity: Math.max(0, item.quantity - 1)} : item 
-            ).filter((item)=> item.quantity > 0)
         )
     }
-    const generateInvoice = () =>{
+    const decQuant = (code) => {
+        const stock = findItemStock(code);
+        setBillItems((prevItems) =>
+            prevItems
+                .map((item) =>
+                    item.code === code
+                        ? { ...item, billQuantity: Math.max(0, item.billQuantity - 1) }
+                        : item
+                )
+                .filter((item) => item.billQuantity > 0)
+        );
+    };
+    const confirmTransaction = async () =>{
+        const { value: customer } = await Swal.fire(
+            {
+                title: "Enter Customer Details",
+                html: 
+                    `<input id="cust-name" placeholder="Customer Name" />` + 
+                    `<input id="cust-ph" placeholder="Customer Number" />` + 
+                    `<input id="t-type" placeholder="Transaction Type" />` + 
+                    `<input id="notes" placeholder="Additional Notes" />`,
+                focusConfirm: false,
+                showCancelButton: true,
+                preConfirm: ()=>{
+                    const name = document.getElementById("cust-name").value;
+                    const phno = document.getElementById("cust-ph").value;
+                    const ttype = document.getElementById("t-type").value;
+                    const notes = document.getElementById("notes").value;
+                    return {name, phno, ttype, notes};
+                }   
+            }
+        );
+        if(customer){
+            generateInvoice(customer);
+        }
+    }
+    const generateInvoice = async (transaction) =>{
+        const trans = {
+            cust_name: transaction.name,
+            phno: transaction.phno,
+            ttype: transaction.ttype,
+            notes: transaction.notes,
+            amount: total,
+        }
+        for(let item of billItems){
+            const dbitem = items.find((i)=>item.code == i.code);
+            const newStock = dbitem.quantity - item.billQuantity;
+            dbitem.quantity = newStock;
+            const result = await window.api.updateitems(dbitem);
+        }
+        //(tid, cust_name, phone_no, amount, ttype, notes
+        await getItems();
         const now = new Date();
-        const generateID = (len = 8) => [...Array(len)].map(() => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".charAt(Math.floor(Math.random() * 62))).join('');
-        const tid = generateID();
+        const tid = await window.api.addtransaction(trans);
+
+//      const generateID = (len = 8) => [...Array(len)].map(() => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".charAt(Math.floor(Math.random() * 62))).join('');
+//      const tid = generateID();
         const date = {       
             year: now.getUTCFullYear().toString(),
             day: now.getDay().toLocaleString(),
             month: now.getMonth().toLocaleString(),
             time: now.getHours().toLocaleString() + ": " + now.getMinutes().toLocaleString(),
         };
+
         const pdf_type = {
             outputType: OutputType.Save,
             returnJsPDFDocObject: true,
-            fileName: "Invoice test",
+            fileName: `${transaction.name}-${tid}`,
             orientationLandscape: false,
             compress: true,
             logo: {
@@ -149,8 +210,8 @@ function Bill(){
                     index + 1,
                     item.name,
                     item.price,
-                    item.quantity,
-                    item.price * item.quantity
+                    item.billQuantity,
+                    item.price * item.billQuantity
                 ])),
                 additionalRows: [
                     {
@@ -168,7 +229,7 @@ function Bill(){
             pageLable: "Page ",
         };
         const pdf = jsPDFInvoiceTemplate(pdf_type);
-        alert("Bill Generated", pdf);
+        alert(`Bill Generated, tid: ${tid}`, pdf);
     }
     return(
         <>
@@ -180,7 +241,7 @@ function Bill(){
             {showDropdown && 
             (<ul>
                 {filtered.map((item, index)=>(
-                    <li key={index}  onClick={()=>addItem(item)}>{item.code} | {item.name} |{item.price}</li>
+                    <li key={index}  onClick={()=>addItem(item)}>{item.code} | {item.name} |{item.price}| {item.quantity} </li>
                     ))}
             </ul>)
             }
@@ -208,8 +269,11 @@ function Bill(){
                         <td>{item.code}</td>
                          <td>{item.name}</td>
                         <td>{item.price}</td>
-                        <td><input type="number" placeholder="Quantity" value={item.quantity} onChange={(e)=>handleQuantityChange(item.code, e)}/></td>
-                        <td><button onClick={() => incQuant(item.code)}>+</button><button onClick={() => decQuant(item.code)}>-</button></td>
+                        <td><input type="number" min={0} placeholder="Quantity" value={item.billQuantity} onChange={(e)=>handleQuantityChange(item.code, e)}/></td>
+                        <td>
+                        <button onClick={() => incQuant(item.code)} disabled={item.billQuantity >= findItemStock(item.code)}>+</button>
+                        <button onClick={() => decQuant(item.code)}>-</button>
+                        </td>
                     </tr>
                     ))}
                     <tr>
@@ -217,7 +281,7 @@ function Bill(){
                     <td>{total}</td>
                     </tr>
                     <tr>
-                        <td colSpan={6}><button onClick={generateInvoice}>Confirm Transaction</button></td>
+                        <td colSpan={6}><button onClick={confirmTransaction}>Confirm Transaction</button></td>
                     </tr>
                     </tbody>
                 </table>
