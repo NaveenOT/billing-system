@@ -1,4 +1,4 @@
-import { ipcMain, app, BrowserWindow } from "electron";
+import { ipcMain, app, BrowserWindow, screen } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -75,7 +75,10 @@ ipcMain.handle("updateitems", (event, item) => {
   return { success: true, id: res.changes };
 });
 function createWindow() {
+  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
   win = new BrowserWindow({
+    width,
+    height,
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs")

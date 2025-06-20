@@ -1,0 +1,61 @@
+
+.inc-button,
+.dec-button {
+  font-size: 16px;
+  font-weight: bold;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  min-width: 40px;
+  transition: background-color 0.3s ease;
+}
+
+.inc-button {
+  background-color: #4CAF50; 
+  color: white;
+}
+
+.inc-button:hover {
+  background-color: #45a049;
+}
+
+.dec-button {
+  background-color: #f44336; 
+  color: white;
+}
+
+.dec-button:hover {
+  background-color: #da190b;
+}
+
+.confirm-button,
+.reset-button {
+  font-size: 16px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin: 0 8px;
+  transition: background-color 0.3s ease;
+}
+
+.confirm-button {
+  background-color: #28a745; 
+  color: white;
+}
+
+.confirm-button:hover {
+  background-color: #218838;
+}
+
+.reset-button {
+  background-color: #dc3545; 
+  color: white;
+}
+
+.reset-button:hover {
+  background-color: #c82333;
+}
+

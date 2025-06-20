@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import jsPDFInvoiceTemplate, { OutputType, jsPDF } from "jspdf-invoice-template";
 import logo from '../assets/test.jpg';
 import Swal from "sweetalert2";
-
+import Navbar from "../components/Navbar";
+import './ButtonStyle.css';
 function Bill(){
+    const searchRef = useRef(null);
     const [items, setItems] = useState([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [searchItem, setSearchItem] = useState("");
@@ -13,6 +15,16 @@ function Bill(){
     useEffect(()=>{
         getItems();
     }, []);
+    useEffect(()=>{
+        const handleClick = (event) =>{
+            if(searchRef.current && !searchRef.current.contains(event.target)){
+                setShowDropdown(false);
+                setSearchItem("");
+            }
+        };
+        document.addEventListener("mousedown", handleClick);
+        return ()=> {document.removeEventListener("mousedown", handleClick);};
+    }, [])
     useEffect(()=>{
         findTotal();
     }, [billItems]);
@@ -39,8 +51,15 @@ function Bill(){
         }
     }
     const findTotal = () =>{
-        const tot = billItems.reduce((acc, item)=> acc + (item.price * item.billQuantity), 0);
+        let tot = billItems.reduce((acc, item)=> acc + (item.price * item.billQuantity), 0);
+        tot = isNaN(tot) ? 0: tot;
         setTotal(tot);
+        setBillItems((prevItems)=>
+            prevItems.map((items)=>({
+                ...items,
+                subtotal: (isNaN(items.billQuantity))? 0 : items.price * items.billQuantity,
+            })       
+        ))
 
     }
     const handleSearch = (e) =>{
@@ -75,7 +94,7 @@ function Bill(){
         )
     };
     const handleQuantityChange = (code, e) =>{
-        const quant = parseInt(e.target.value, 10) || 0;
+        const quant = parseFloat(e.target.value, 10).toFixed(2) || 0;
         const stock = findItemStock(code);
         const newQt = Math.min(stock, quant);
         setBillItems((prevItems)=>
@@ -231,61 +250,80 @@ function Bill(){
         const pdf = jsPDFInvoiceTemplate(pdf_type);
         alert(`Bill Generated, tid: ${tid}`, pdf);
     }
+    const resetBill = () =>{
+        setBillItems([])
+    }
     return(
         <>
-        <h1 className="text-1xl font-bold underline">Bill</h1>
-        <div>
-            <input type="text" placeholder="search code or name"
+        <Navbar />
+        <div className="mb-15">
+        <div className="text-1xl absolute top-[6.5rem] flex flex-col space-y-10 justify-center items-center left-150">
+        <h1 className="mr-[12em]">Billing</h1>
+            <div ref={searchRef}>
+            <div className="flex flex-row font-2xl justify-center items-center  space-x-15 mr-120">
+            <label className="text-2xl font-semibold">Enter Here: </label>
+            <input type="text" placeholder="Search code or Name"
              onChange={handleSearch}
+             className="text-2xl font-semibold p-2 border rounded-2xl" 
             />
+            </div>
             {showDropdown && 
-            (<ul>
+            (<ul  className="text-2xl mb-8 bg-white font-semibold mr-[32rem] p-4 border rounded-2xl max-h-86 overflow-y-auto w-96 shadow-2xl">
+                <li className="font-bold border-b pb-1 mb-1"> Code | Name | Price | Quantity</li>
                 {filtered.map((item, index)=>(
-                    <li key={index}  onClick={()=>addItem(item)}>{item.code} | {item.name} |{item.price}| {item.quantity} </li>
+                    <li key={index} className="border-1 rounded-2xl cursor-pointer hover:bg-gray-300 w-80" onClick={()=>addItem(item)}>{item.code} | {item.name} |{item.price}| {item.quantity} </li>
                     ))}
             </ul>)
             }
         </div>
+        </div>
         <div>
             {billItems.length === 0 ? 
-                <h3>No Items Added</h3>
+                <h3 className="text-4xl">No Items Added</h3>
                 :
-                
-                <table>
-                    <thead>
+                <div className="mt-80 rounded-lg shadow-lg w-full max-w-6xl">
+                <table className="table-auto w-full border border-gray-300 text-center">
+                    <thead className="bg-gray-200 text-3xl font-semibold">
                         <tr>
-                        <th>Serial No.</th>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
-                        <th>Actions</th>
+                        <th className="bg-blue-200 p-3 border">Serial No.</th>
+                        <th className="p-3 border">Code</th>
+                        <th className="p-3 border">Name</th>
+                        <th className="p-3 border">Price</th>
+                        <th className="p-3 border">Quantity</th>
+                        <th className="p-3 border">Subtotal</th>
+                        <th className="p-3 border">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
                     {billItems.map((item, index) => (
-                    <tr key={index}>
-                        <td>{index + 1}</td>
-                        <td>{item.code}</td>
-                         <td>{item.name}</td>
-                        <td>{item.price}</td>
-                        <td><input type="number" min={0} placeholder="Quantity" value={item.billQuantity} onChange={(e)=>handleQuantityChange(item.code, e)}/></td>
-                        <td>
-                        <button onClick={() => incQuant(item.code)} disabled={item.billQuantity >= findItemStock(item.code)}>+</button>
-                        <button onClick={() => decQuant(item.code)}>-</button>
+                    <tr key={index} className="text-2xl font-mono group hover:bg-amber-100">
+                        <td className="bg-blue-200 p-3 border text-center group-hover:bg-amber-100">{index + 1}</td>
+                        <td className="p-3 border text-center group-hover:bg-amber-100">{item.code}</td>
+                         <td className="p-3 border text-center group-hover:bg-amber-100">{item.name}</td>
+                        <td className="p-3 border text-center group-hover:bg-amber-100">{item.price}</td>
+                        <td className="p-3 border text-center group-hover:bg-amber-100"><input type="number" step="any" className="text-center" min={0} placeholder="Quantity" value={item.billQuantity} onChange={(e)=>handleQuantityChange(item.code, e)}/></td>
+                        <td className="p-3 border text-center group-hover:bg-amber-100">{item.subtotal}</td>
+                        <td className="flex flex-row space-x-5 justify-center py-3 items-center border">
+                        <button className="inc-button" type="button" onClick={() => incQuant(item.code)} disabled={item.billQuantity >= findItemStock(item.code)}>+</button>
+                        <button className="dec-button" onClick={() => decQuant(item.code)}>-</button>
+                        
                         </td>
                     </tr>
                     ))}
-                    <tr>
-                    <td colSpan={5} >Total: </td>
-                    <td>{total}</td>
+                    <tr className="bg-amber-100 text-2xl font-semibold border">
+                    <td colSpan={5} className="py-3">Total: </td>
+                    <td className="py-3 border-2">{total}</td>
                     </tr>
                     <tr>
-                        <td colSpan={6}><button onClick={confirmTransaction}>Confirm Transaction</button></td>
+                        <td colSpan={4} className="text-2xl font-semibold p-4"><button className="reset-button" onClick={resetBill}>Reset Bill</button></td>
+                        <td colSpan={4} className="text-2xl font-semibold p-4"><button onClick={confirmTransaction} className="confirm-button">Confirm Transaction</button></td>
                     </tr>
                     </tbody>
                 </table>
+                </div>
             }
+            </div>
+            
         </div>
         </>
     )

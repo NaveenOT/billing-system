@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Navbar from "../components/Navbar";
 const Add = ({onUpdate}) =>{
     const [item, setItem] = useState(
         {
@@ -32,39 +33,36 @@ const Add = ({onUpdate}) =>{
     
     return(
         <>
-        <p className="text-2xl">Add Item</p>
-        <label htmlFor="name">Product Name</label>
-        <input type="text" placeholder="Name" id="name" onChange={handleChange}/>
-        <br />
+        <p className="text-2xl font-semibold mb-7">Add Item</p>
+        <div className="flex flex-col justify-center items-center ml-35">
+                <div className="flex flex-row text-2xl justify-center items-center space-x-10 py-2">
+            <label htmlFor="code">Product Code</label>
+            <input type="number" placeholder="Product Code" id="code" onChange={handleChange}/> 
+        </div>
+        <div className="flex flex-row text-2xl justify-center items-center space-x-5 py-2">
+            <label htmlFor="category" className="mr-10">Category</label>
+            <select className="mr-50">
+                <option value="Traditional">Traditional</option>
+                <option value="Millets">Millets</option>
+                <option value="Rice">Rice</option>
+            </select>
+        </div>
+                <div className="flex flex-row text-2xl justify-center items-center space-x-5 py-2">
+            <label htmlFor="name" className="mr-10">Product Name</label>
+            <input type="text" placeholder="Name" id="name" onChange={handleChange}/>
+        </div>
+                <div className="flex flex-row text-2xl justify-center items-center space-x-15 py-2">
+            <label htmlFor="price">Price Per Kg</label>
+            <input type="number" placeholder="Price" id="price" onChange={handleChange}/>
+        </div>
+                <div className="flex flex-row text-2xl justify-center items-center space-x-25 py-2">
+            <label htmlFor="price" className="ml-3" >Quantity</label>
+            <input type="number" placeholder="Quantity" id="quantity" onChange={handleChange} className=""/>
+        </div>
+        
 
-        <label htmlFor="code">Product Code</label>
-        <input type="number" placeholder="Product Code" id="code" onChange={handleChange}/>
-        <br />
-
-        <label htmlFor="price">Price Per Kg</label>
-        <input type="number" placeholder="Product Code" id="price" onChange={handleChange}/>
-
-        <label htmlFor="price">Quantity</label>
-        <input type="number" placeholder="Quantity" id="quantity" onChange={handleChange}/>
-
-        <button onClick={addItem}>Add Item</button>
-        <br />
-        {yes && (
-  <div>
-    <h1>{item.name}</h1>
-    <h1>{item.code}</h1>
-    <h1>{item.price}</h1>
-    <h1>{item.quantity}</h1>
-    <h2>All Items</h2>
-    <ul>
-      {rows && rows.map((row, index) => (
-        <li key={index}>
-          Name: {row.name} | Code: {row.code} | Price: {row.price} | Quantity: {row.quantity}
-        </li>
-      ))}
-    </ul>
-  </div>
-)}
+        <button onClick={addItem} className="mt-5 mr-35"><span className="text-2xl font-semibold">Add Item</span></button>
+        </div>        
     </>
     )
 }
@@ -84,25 +82,18 @@ const Remove = ({onUpdate}) =>{
             setYes(true);
             onUpdate();
         }
-         const rows = await window.api.getitems();
+        const rows = await window.api.getitems();
         console.table(rows);
         setRow(rows);
     }
     return(
         <>
-        <h3>Remove Item</h3>
-        <label htmlFor="code">Product Code</label>
-        <input type="number" placeholder="Product Code" id="code" onChange={handleChange}/>
-        <button onClick={removeItem}>Remove Item</button>
-        {yes && 
-        <ul>
-          {rows.map((row, index) => (
-            <li key={index}>
-              Name: {row.name} | Code: {row.code} | Price: {row.price}   | Quantity: {<td>{row.quantity}</td>}
-            </li>
-          ))}
-        </ul>
-        }
+        <h3 className="text-3xl font-semibold mb-10">Remove Item</h3>
+        <div className="flex flex-row space-x-15 justify-center items-center ml-30 text-2xl mb-10">
+        <label htmlFor="code" className="font-semibold mr-10">Product Code: </label>
+        <input type="number" placeholder="Enter Here" id="code" onChange={handleChange} min={0} className="border-grey-400m rounded-md border-2 p-1"/>
+        </div>
+        <button onClick={removeItem} className="ml-20 font-extrabold" disabled={!code}><span className="text-2xl font-semibold">Remove Item</span></button>
         </>
 
     );
@@ -117,22 +108,30 @@ const Items = ({props}) =>{
         useEffect(()=>{handleLoad()}, [props]);
         return(
             <>
-                <table>
-                    <tr>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th>Quantity</th>
+                <div className="flex justify-center items-center mt-15 text-2xl">
+                        <div className="max-h-96 overflow-y-auto w-full flex justify-center">
+                      <table className="min-w-200 r border-gray-300 text-2xl text-center shadow-lg border-2">
+                    <tr className="bg-gray-300">
+                        <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">S.No</th>
+                        <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">Item Code</th>
+                        <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">Category</th>
+                        <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">Name</th>
+                        <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">Price</th>
+                        <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">Quantity</th>
                     </tr>
                     {items && items.map((item, index) => (
-                        <tr key={index}>
+                        <tr key={index} className="hover:bg-gray-100">
+                            <td>{index+1}</td>
                             <td>{item.code}</td>
+                            <td>Category</td>
                             <td>{item.name}</td>
                             <td>{item.price}</td>
                             <td>{item.quantity}</td>
                         </tr>
                     ))}
                 </table>
+                </div>
+                </div>
             </>
         );
 }
@@ -200,7 +199,7 @@ const Update = ({onUpdate})=>{
             <h3 className="text-3xl font-bold mt-0 mb-5">Update Item</h3>
             <div className="flex flex-row space-x-7">
                 <label htmlFor="code" className="mt-2 font-semibold text-3xl">Product Code</label>
-            <input type="number" placeholder="Product Code" id="code" onChange={handleChange} className="mb-5 px-4 py-3 border border-grey-400 rounded-2xl mt-2 w-60 "/>
+            <input type="number" placeholder="Product Code" id="code" min={0} onChange={handleChange} className="mb-5 px-4 py-3 border border-grey-400 rounded-2xl mt-2 w-60 "/>
             </div>
             {find && 
             <table>
@@ -222,24 +221,22 @@ const Update = ({onUpdate})=>{
             <div className="mt-7 flex flex-col space-y-5">
                 <div className="flex flex-row text-2xl justify-center items-center space-x-15">
                 <label htmlFor="code">Product Code: </label>
-                <input className=" border border-grey-400 rounded-md px-5" size={15} type="number" placeholder="Product Code" id="code" value = {newItem.code} onChange={handleUpdateChange}/>
+                <input className=" border border-grey-400 rounded-md px-5"size={15} type="number" min={0}  placeholder="Product Code" id="code" value={newItem.code > 0 ? newItem.code : 0}  onChange={handleUpdateChange}/>
                 </div>
-                <div className="flex flex-row">
-                <label htmlFor="name">Product Name</label>
-                <input type="text" placeholder="Product Name" id="name" value = {newItem.name} onChange={handleUpdateChange}/>
+                <div className="flex flex-row text-2xl justify-center items-center space-x-15">
+                <label htmlFor="name">Product Name: </label>
+                <input className=" border border-grey-400 rounded-md px-5" type="text" placeholder="Product Name" id="name" value = {newItem.name} onChange={handleUpdateChange}/>
                 </div>
-                <div className="flex flex-row">
-                <label htmlFor="price">Product Price</label>
-                <input type="number" placeholder="Product Price" id="price" value = {newItem.price} onChange={handleUpdateChange}/>
+                <div className="flex flex-row text-2xl justify-center items-center space-x-15">
+                <label htmlFor="price">Product Price: </label>
+                <input className=" border border-grey-400 rounded-md px-5" type="number" placeholder="Product Price" id="price" value = {newItem.price} onChange={handleUpdateChange}/>
                 </div>
-                <div className="flex flex-row">
+                <div className="flex flex-row text-2xl justify-center items-center space-x-24 ml-6">
                 <label htmlFor="quantity">Quantity</label>
-                <input type="number" placeholder="quantity" id="quantity" value = {newItem.quantity} onChange={handleUpdateChange}/>
+                <input className=" border border-grey-400 rounded-md px-5" type="number" placeholder="quantity" id="quantity" value = {newItem.quantity} onChange={handleUpdateChange}/>
                 </div>
                 <button onClick={onUpdateSubmit} className="relative inline-flex items-center justify-center p-0.5 mb-2 me-2 overflow-hidden text-sm font-medium text-gray-900 rounded-lg group bg-gradient-to-br from-purple-600 to-blue-500 group-hover:from-purple-600 group-hover:to-blue-500 hover:text-white dark:text-white focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800">
-                <span className="relative px-5 py-2.5 transition-all ease-in duration-75 bg-white dark:bg-gray-900 rounded-md group-hover:bg-transparent group-hover:dark:bg-transparent">
                 Apply Changes
-                </span>
                 </button>
             </div>}
         </div>
@@ -253,18 +250,25 @@ function Catalogue(){
     const [tab, setTab] = useState("add");
     return(
         <div className="h-screen overflow-hidden">
-        <div id="tab" className="pt-[6.5rem] min-h-screen">
-            <div className="sticky top-[6.5rem] text-blue-700 z-40 bg-white shadow-md py-1 mt-5 flex justify-center space-x-25 font-extrabold text-2xl">
+            <Navbar />
+            
+            <div className="fixed top-20 left-0 w-full z-40 bg-white py-4">
+            <div className=" text-blue-700 z-40 bg-white shadow-md py-1 mt-5 flex justify-center space-x-25 font-extrabold text-2xl">
             <button onClick={()=>setTab("add")} >Add Items</button>
             <button onClick={()=>setTab("remove")}>Remove Items</button>
             <button onClick={()=>setTab("update")}>Update Items</button>
             </div>
         </div>
-        <div className="absolute top-[15rem] left-0 w-full px-6 z-30 mt-10">
+        <div className="absolute top-[15rem] left-0 w-full px-6 z-30 mt-10 bg-white">
             {(tab == "add") && <Add onUpdate={triggerRefresh}/>}
             {(tab == "remove") && <Remove onUpdate={triggerRefresh}/>}
             {(tab == "update") && <Update onUpdate={triggerRefresh}/>}
+            <div className="items-center justify-center">
             <Items props={refresh}/>
+            <button className="bg-green-500 text-white px-4 py-2 rounded">Test</button>
+
+            <div className="mt-15"></div>
+            </div>
         </div>
         </div>
     )

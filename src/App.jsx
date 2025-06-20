@@ -10,15 +10,18 @@ import './App.css'
 function App() {
   return (
     <>
-
+      <div>
      <BrowserRouter>
-      <Navbar />
+      
+      <div>
       <Routes>
         <Route path='/' element={<Dashboard />} />
         <Route path='/bill' element={<Bill />} />
         <Route path='/catalogue' element={<Catalogue />} />
       </Routes>
+      </div>
      </BrowserRouter>
+     </div>
     </>
   )
 }
