@@ -250,8 +250,6 @@ function Catalogue(){
     const [tab, setTab] = useState("add");
     return(
         <div className="h-screen overflow-hidden">
-            <Navbar />
-            
             <div className="fixed top-20 left-0 w-full z-40 bg-white py-4">
             <div className=" text-blue-700 z-40 bg-white shadow-md py-1 mt-5 flex justify-center space-x-25 font-extrabold text-2xl">
             <button onClick={()=>setTab("add")} >Add Items</button>

@@ -27,5 +27,6 @@ contextBridge.exposeInMainWorld('api', {
   delitems: (code)=> ipcRenderer.invoke('delitems', code),
   finditems: (code)=> ipcRenderer.invoke('finditems', code),
   updateitems: (item)=> ipcRenderer.invoke('updateitems', item),
-  addtransaction: (item)=> ipcRenderer.invoke('addtransaction', item),
+  addtransaction: (item) => ipcRenderer.invoke('addtransaction',item),
+  gettransactions: ()=>ipcRenderer.invoke('gettransactions'),
 });

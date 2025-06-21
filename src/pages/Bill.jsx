@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import jsPDFInvoiceTemplate, { OutputType, jsPDF } from "jspdf-invoice-template";
 import logo from '../assets/test.jpg';
 import Swal from "sweetalert2";
-import Navbar from "../components/Navbar";
+
 import './ButtonStyle.css';
 function Bill(){
     const searchRef = useRef(null);
@@ -12,6 +12,7 @@ function Bill(){
     const [filtered, setFiltered] = useState([]);
     const [billItems, setBillItems] = useState([]);
     const [total, setTotal] = useState(0);
+
     useEffect(()=>{
         getItems();
     }, []);
@@ -23,15 +24,33 @@ function Bill(){
             }
         };
         document.addEventListener("mousedown", handleClick);
-        return ()=> {document.removeEventListener("mousedown", handleClick);};
+        return ()=> document.removeEventListener("mousedown", handleClick);
     }, [])
-    useEffect(()=>{
-        findTotal();
-    }, [billItems]);
+   useEffect(() => {
+    let hasChange = false;
+
+    const updatedItems = billItems.map((item) => {
+        const newSubtotal = parseFloat(item.price) * parseFloat(item.billQuantity);
+        const fixedSubtotal = isNaN(newSubtotal) ? 0 : parseFloat(newSubtotal.toFixed(2));
+
+        if (item.subtotal !== fixedSubtotal) {
+            hasChange = true;
+            return { ...item, subtotal: fixedSubtotal };
+        }
+        return item;
+    });
+
+    if (hasChange) {
+        setBillItems(updatedItems);
+    }
+
+    const tot = updatedItems.reduce((acc, item) => acc + item.subtotal, 0);
+    setTotal(tot.toFixed(2));
+}, [billItems]);
     const getItems = async () =>{
-        const res = await window.api.getitems();
-        setItems(res);
-    };
+            const res = await window.api.getitems();
+            setItems(res);
+        };
     const findItemStock = (code) =>{
         const found = items.find((item)=> item.code ===  code);
         return found ? found.quantity : 0;
@@ -50,18 +69,7 @@ function Bill(){
                 alert("Item Out of Stock");}
         }
     }
-    const findTotal = () =>{
-        let tot = billItems.reduce((acc, item)=> acc + (item.price * item.billQuantity), 0);
-        tot = isNaN(tot) ? 0: tot;
-        setTotal(tot);
-        setBillItems((prevItems)=>
-            prevItems.map((items)=>({
-                ...items,
-                subtotal: (isNaN(items.billQuantity))? 0 : items.price * items.billQuantity,
-            })       
-        ))
-
-    }
+    
     const handleSearch = (e) =>{
         const search = e.target.value;
         setSearchItem(search);
@@ -94,12 +102,12 @@ function Bill(){
         )
     };
     const handleQuantityChange = (code, e) =>{
-        const quant = parseFloat(e.target.value, 10).toFixed(2) || 0;
+        const quant = parseFloat(e.target.value, 10) || 0;
         const stock = findItemStock(code);
         const newQt = Math.min(stock, quant);
         setBillItems((prevItems)=>
             prevItems.map((item)=>
-                item.code === code ? {...item, billQuantity: newQt } : item
+                item.code === code ? {...item, billQuantity: newQt.toFixed(2) } : item
             )
         )
     }
@@ -140,12 +148,14 @@ function Bill(){
         }
     }
     const generateInvoice = async (transaction) =>{
+        const items_json = JSON.stringify(billItems);
         const trans = {
             cust_name: transaction.name,
             phno: transaction.phno,
             ttype: transaction.ttype,
             notes: transaction.notes,
             amount: total,
+            items_json: items_json,
         }
         for(let item of billItems){
             const dbitem = items.find((i)=>item.code == i.code);
@@ -154,12 +164,12 @@ function Bill(){
             const result = await window.api.updateitems(dbitem);
         }
         //(tid, cust_name, phone_no, amount, ttype, notes
-        await getItems();
-        const now = new Date();
-        const tid = await window.api.addtransaction(trans);
-
+      
+    await getItems();
+    const tid = await window.api.addtransaction(trans);   
 //      const generateID = (len = 8) => [...Array(len)].map(() => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".charAt(Math.floor(Math.random() * 62))).join('');
 //      const tid = generateID();
+        const now = new Date();
         const date = {       
             year: now.getUTCFullYear().toString(),
             day: now.getDay().toLocaleString(),
@@ -254,10 +264,9 @@ function Bill(){
         setBillItems([])
     }
     return(
-        <>
-        <Navbar />
+        <>        
         <div className="mb-15">
-        <div className="text-1xl absolute top-[6.5rem] flex flex-col space-y-10 justify-center items-center left-150">
+        <div className="text-xl absolute top-[6.5rem] flex flex-col space-y-10 justify-center items-center left-150">
         <h1 className="mr-[12em]">Billing</h1>
             <div ref={searchRef}>
             <div className="flex flex-row font-2xl justify-center items-center  space-x-15 mr-120">
@@ -301,7 +310,7 @@ function Bill(){
                         <td className="p-3 border text-center group-hover:bg-amber-100">{item.code}</td>
                          <td className="p-3 border text-center group-hover:bg-amber-100">{item.name}</td>
                         <td className="p-3 border text-center group-hover:bg-amber-100">{item.price}</td>
-                        <td className="p-3 border text-center group-hover:bg-amber-100"><input type="number" step="any" className="text-center" min={0} placeholder="Quantity" value={item.billQuantity} onChange={(e)=>handleQuantityChange(item.code, e)}/></td>
+                        <td className="p-3 border text-center group-hover:bg-amber-100"><input type="text"  className="text-center" min={0} placeholder="Quantity"  value={item.billQuantity}onChange={(e)=>handleQuantityChange(item.code, e)}/></td>
                         <td className="p-3 border text-center group-hover:bg-amber-100">{item.subtotal}</td>
                         <td className="flex flex-row space-x-5 justify-center py-3 items-center border">
                         <button className="inc-button" type="button" onClick={() => incQuant(item.code)} disabled={item.billQuantity >= findItemStock(item.code)}>+</button>

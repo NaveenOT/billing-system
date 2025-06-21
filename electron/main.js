@@ -42,14 +42,19 @@ db.exec(
   `CREATE TABLE IF NOT EXISTS items (name VARCHAR NOT NULL,code NUMBER PRIMARY KEY ,price NUMERIC NOT NULL, quantity NUMERIC);`
   );
 db.exec(
-  `CREATE TABLE IF NOT EXISTS transactions (tid TEXT PRIMARY KEY, cust_name TEXT, phone_no, TEXT, amount NUMERIC NOT NULL, t_date DATETIME DEFAULT CURRENT_TIMESTAMP, ttype TEXT, notes TEXT);`
+  `CREATE TABLE IF NOT EXISTS transactions(tid TEXT PRIMARY KEY, cust_name TEXT, phone_no TEXT, amount NUMERIC NOT NULL, t_date DATETIME DEFAULT CURRENT_TIMESTAMP, ttype TEXT, notes TEXT, items_json TEXT);`
 );
+
 ipcMain.handle('addtransaction', (event, item)=>{
   const tid = nanoid(10);
-  const insert = db.prepare(`INSERT INTO transactions(tid, cust_name, phone_no, amount, ttype, notes)
-                              VALUES(?, ?, ?, ?, ?, ?);`)
-  insert.run(tid, item.cust_name, item.phno, item.amount, item.ttype, item.notes);
+  const insert = db.prepare(`INSERT INTO transactions(tid, cust_name, phone_no, amount, ttype, notes, items_json)
+                              VALUES(?, ?, ?, ?, ?, ?, ?);`)
+  insert.run(tid, item.cust_name, item.phno, item.amount, item.ttype, item.notes, item.items_json);
   return tid;
+});
+ipcMain.handle('gettransactions', ()=>{
+  const select = db.prepare(`SELECT * FROM transactions`);
+  return select.all();
 });
 ipcMain.handle('additems', (event, item) => {
   const insert = db.prepare(`INSERT INTO items (name, code, price, quantity) VALUES(?, ?, ?, ?);`)
