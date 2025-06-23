@@ -29,4 +29,10 @@ contextBridge.exposeInMainWorld('api', {
   updateitems: (item)=> ipcRenderer.invoke('updateitems', item),
   addtransaction: (item) => ipcRenderer.invoke('addtransaction',item),
   gettransactions: ()=>ipcRenderer.invoke('gettransactions'),
+  getcategories: ()=> ipcRenderer.invoke('getcategories'),
+  addcategory: (name) => ipcRenderer.invoke('addcategory',name),
+  getexpenses: () =>ipcRenderer.invoke('getexpenses'),
+  addexpense: (expense) => ipcRenderer.invoke('addexpense',expense),
+  delexpense: (desc)=> ipcRenderer.invoke('delexpense', desc),
+  updateexpense: (desc)=> ipcRenderer.invoke('updateexpense', desc),
 });

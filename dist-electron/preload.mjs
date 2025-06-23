@@ -27,5 +27,11 @@ electron.contextBridge.exposeInMainWorld("api", {
   finditems: (code) => electron.ipcRenderer.invoke("finditems", code),
   updateitems: (item) => electron.ipcRenderer.invoke("updateitems", item),
   addtransaction: (item) => electron.ipcRenderer.invoke("addtransaction", item),
-  gettransactions: () => electron.ipcRenderer.invoke("gettransactions")
+  gettransactions: () => electron.ipcRenderer.invoke("gettransactions"),
+  getcategories: () => electron.ipcRenderer.invoke("getcategories"),
+  addcategory: (name) => electron.ipcRenderer.invoke("addcategory", name),
+  getexpenses: () => electron.ipcRenderer.invoke("getexpenses"),
+  addexpense: (expense) => electron.ipcRenderer.invoke("addexpense", expense),
+  delexpense: (desc) => electron.ipcRenderer.invoke("delexpense", desc),
+  updateexpense: (desc) => electron.ipcRenderer.invoke("updateexpense", desc)
 });

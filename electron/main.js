@@ -38,13 +38,43 @@ try{
   db.exec('UPDATE items SET quantity = 0 where quantity IS NULL');
 }
 */
+
+
+
+db.exec(`CREATE TABLE IF NOT EXISTS categories(name TEXT);`)
+
 db.exec(
-  `CREATE TABLE IF NOT EXISTS items (name VARCHAR NOT NULL,code NUMBER PRIMARY KEY ,price NUMERIC NOT NULL, quantity NUMERIC);`
+  `CREATE TABLE IF NOT EXISTS items (category TEXT, name TEXT NOT NULL,code NUMBER PRIMARY KEY ,price NUMERIC NOT NULL, quantity NUMERIC, procurement_rate NUMERIC);`
   );
+ 
 db.exec(
   `CREATE TABLE IF NOT EXISTS transactions(tid TEXT PRIMARY KEY, cust_name TEXT, phone_no TEXT, amount NUMERIC NOT NULL, t_date DATETIME DEFAULT CURRENT_TIMESTAMP, ttype TEXT, notes TEXT, items_json TEXT);`
 );
-
+db.exec(
+  `CREATE TABLE IF NOT EXISTS expenses(description TEXT, date DATETIME DEFAULT CURRENT_TIMESTAMP, amount NUMERIC, COMPLETED BOOLEAN DEFAULT false);`
+);
+ipcMain.handle('getexpenses', ()=>{
+  const select = db.prepare(`SELECT * FROM expenses;`);
+  return select.all();
+});
+ipcMain.handle('addexpense', (event, expense)=>{
+  const insert = db.prepare(`INSERT INTO expenses (description, date, amount) VALUES(?, ?, ?);`)
+  const res = insert.run(expense.description, expense.date, expense.amount);
+  return {success: true, id: res.lastInsertRowId};
+})
+ipcMain.handle('updateexpense', (event, expense)=>{
+  const find = db.prepare(`UPDATE expenses
+    SET completed = true
+    WHERE description = ?;
+    `);
+  const res = find.run(expense);
+  return {success: true,id : res.changes};
+});
+ipcMain.handle('delexpense',(event, desc) =>{
+  const del = db.prepare(`DELETE FROM expenses WHERE description = ?;`)
+  const result = del.run(desc);
+  return {success: true, id: result.lastDeleteRowId};
+});
 ipcMain.handle('addtransaction', (event, item)=>{
   const tid = nanoid(10);
   const insert = db.prepare(`INSERT INTO transactions(tid, cust_name, phone_no, amount, ttype, notes, items_json)
@@ -53,13 +83,23 @@ ipcMain.handle('addtransaction', (event, item)=>{
   return tid;
 });
 ipcMain.handle('gettransactions', ()=>{
-  const select = db.prepare(`SELECT * FROM transactions`);
+  const select = db.prepare(`SELECT * FROM transactions;`);
   return select.all();
 });
 ipcMain.handle('additems', (event, item) => {
-  const insert = db.prepare(`INSERT INTO items (name, code, price, quantity) VALUES(?, ?, ?, ?);`)
-  const result = insert.run(item.name, item.code, item.price, item.quantity);
+  const insert = db.prepare(`INSERT INTO items (category, name, code, price, quantity, procurement_rate) VALUES(?, ?, ?, ?, ?, ?);`)
+  const result = insert.run(item.category, item.name, item.code, item.price, item.quantity, item.procurement_rate);
   return {success: true, id: result.lastInsertRowId};
+});
+ipcMain.handle('addcategory', (event, name)=>{
+  const insert = db.prepare(`INSERT INTO categories (name) VALUES(?);`)
+  const res = insert.run(name);
+  return {success: true, id: res.lastInsertRowId};
+})
+ipcMain.handle('getcategories', () => {
+  const select = db.prepare(`SELECT * FROM categories;`);
+  return select.all();
+
 });
 ipcMain.handle('delitems',(event, code) =>{
   const del = db.prepare(`DELETE FROM items WHERE code = ?;`)
@@ -67,7 +107,7 @@ ipcMain.handle('delitems',(event, code) =>{
   return {success: true, id: result.lastDeleteRowId};
 });
 ipcMain.handle('getitems', () => {
-  const select = db.prepare(`SELECT * FROM items`);
+  const select = db.prepare(`SELECT * FROM items;`);
   return select.all();
 
 });
@@ -78,10 +118,10 @@ ipcMain.handle('finditems', (event, code)=>{
 
 ipcMain.handle('updateitems', (event, item)=>{
   const find = db.prepare(`UPDATE items
-    SET name = ?, price = ?, quantity = ? 
+    SET name = ?, price = ?, quantity = ?, category = ?, procurement_rate = ?
     WHERE code = ?;
     `);
-  const res = find.run(item.name,item.price,item.quantity, item.code,);
+  const res = find.run(item.name,item.price,item.quantity,item.category, item.procurement_rate, item.code);
   return {success: true,id : res.changes};
 });
 function createWindow() {

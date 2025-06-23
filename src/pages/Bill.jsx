@@ -277,10 +277,10 @@ function Bill(){
             />
             </div>
             {showDropdown && 
-            (<ul  className="text-2xl mb-8 bg-white font-semibold mr-[32rem] p-4 border rounded-2xl max-h-86 overflow-y-auto w-96 shadow-2xl">
-                <li className="font-bold border-b pb-1 mb-1"> Code | Name | Price | Quantity</li>
+            (<ul  className="text-2xl mb-8 bg-white font-semibold mr-[32rem] p-4 border rounded-2xl max-h-86   shadow-2xl">
+                <li className="font-bold border-b pb-1 mb-1"> Code |Category| Name | Price | Quantity</li>
                 {filtered.map((item, index)=>(
-                    <li key={index} className="border-1 rounded-2xl cursor-pointer hover:bg-gray-300 w-80" onClick={()=>addItem(item)}>{item.code} | {item.name} |{item.price}| {item.quantity} </li>
+                    <li key={index} className="border-1 rounded-2xl cursor-pointer hover:bg-gray-300 w-80" onClick={()=>addItem(item)}>{item.code} |{item.category}|{item.name} |{item.price}| {item.quantity} </li>
                     ))}
             </ul>)
             }
@@ -296,6 +296,7 @@ function Bill(){
                         <tr>
                         <th className="bg-blue-200 p-3 border">Serial No.</th>
                         <th className="p-3 border">Code</th>
+                           <th className="p-3 border">Category</th>
                         <th className="p-3 border">Name</th>
                         <th className="p-3 border">Price</th>
                         <th className="p-3 border">Quantity</th>
@@ -308,6 +309,7 @@ function Bill(){
                     <tr key={index} className="text-2xl font-mono group hover:bg-amber-100">
                         <td className="bg-blue-200 p-3 border text-center group-hover:bg-amber-100">{index + 1}</td>
                         <td className="p-3 border text-center group-hover:bg-amber-100">{item.code}</td>
+                        <td className="p-3 border text-center group-hover:bg-amber-100">{item.category}</td>
                          <td className="p-3 border text-center group-hover:bg-amber-100">{item.name}</td>
                         <td className="p-3 border text-center group-hover:bg-amber-100">{item.price}</td>
                         <td className="p-3 border text-center group-hover:bg-amber-100"><input type="text"  className="text-center" min={0} placeholder="Quantity"  value={item.billQuantity}onChange={(e)=>handleQuantityChange(item.code, e)}/></td>

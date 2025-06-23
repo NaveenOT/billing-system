@@ -1,12 +1,16 @@
 import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
-const Add = ({onUpdate}) =>{
+import "./ButtonStyle.css"
+const Add = ({onUpdate, categories}) =>{
+    
     const [item, setItem] = useState(
-        {
+        {   
+            category: "",
             name: "",
             code: "",
             price: "",
             quantity: "",
+            procurement_rate: "",
         }
     );
     const [rows, setRow] = useState([]);
@@ -41,10 +45,11 @@ const Add = ({onUpdate}) =>{
         </div>
         <div className="flex flex-row text-2xl justify-center items-center space-x-5 py-2">
             <label htmlFor="category" className="mr-10">Category</label>
-            <select className="mr-50">
-                <option value="Traditional">Traditional</option>
-                <option value="Millets">Millets</option>
-                <option value="Rice">Rice</option>
+            <select className="mr-50" id="category" onChange={handleChange}>
+                    <option value="">Select Category</option>
+                {categories.map((cat, index)=>(
+                    <option key={index} value={cat.name}> {cat.name}</option>
+                ))}
             </select>
         </div>
                 <div className="flex flex-row text-2xl justify-center items-center space-x-5 py-2">
@@ -55,14 +60,18 @@ const Add = ({onUpdate}) =>{
             <label htmlFor="price">Price Per Kg</label>
             <input type="number" placeholder="Price" id="price" onChange={handleChange}/>
         </div>
+         </div>
+            <div className="flex flex-row text-2xl justify-center items-center space-x-15 py-2">
+            <label htmlFor="procurement_rate">Procurement Rate</label>
+            <input type="number" placeholder="Procurement Rate / Kg" id="procurement_rate" onChange={handleChange}/>
+        </div>
                 <div className="flex flex-row text-2xl justify-center items-center space-x-25 py-2">
             <label htmlFor="price" className="ml-3" >Quantity</label>
             <input type="number" placeholder="Quantity" id="quantity" onChange={handleChange} className=""/>
         </div>
         
 
-        <button onClick={addItem} className="mt-5 mr-35"><span className="text-2xl font-semibold">Add Item</span></button>
-        </div>        
+        <button onClick={addItem} className="mt-5 mr-35"><span className="text-2xl font-semibold">Add Item</span></button>       
     </>
     )
 }
@@ -117,15 +126,17 @@ const Items = ({props}) =>{
                         <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">Category</th>
                         <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">Name</th>
                         <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">Price</th>
+                        <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">Procurement Rate</th>
                         <th className="py-3 px-6 border-b border-gray-300 rounded-b-4xl">Quantity</th>
                     </tr>
                     {items && items.map((item, index) => (
                         <tr key={index} className="hover:bg-gray-100">
                             <td>{index+1}</td>
                             <td>{item.code}</td>
-                            <td>Category</td>
+                            <td>{item.category}</td>
                             <td>{item.name}</td>
                             <td>{item.price}</td>
+                            <td>{item.procurement_rate}</td>
                             <td>{item.quantity}</td>
                         </tr>
                     ))}
@@ -135,19 +146,23 @@ const Items = ({props}) =>{
             </>
         );
 }
-const Update = ({onUpdate})=>{
+const Update = ({onUpdate, categories})=>{
     const [find, setFind] = useState(
         {
+            category: "",
             name : "",
             code : "",
             price: "",
+            procurement_rate: "",
             quantity: "",
         }
     );
     const [newItem, setnewItem] = useState({
+            category: "",
             name : "",
             code : "",
             price: "",
+            procurement_rate: "",
             quantity: "",
     })
     const [code, setCode] = useState(NaN);
@@ -160,11 +175,11 @@ const Update = ({onUpdate})=>{
             const row = await window.api.finditems(enteredCode);
             if (row) {
                 setisDisp(true);
-                setFind({ name: row.name, code: row.code, price: row.price, quantity: row.quantity });
-                setnewItem({ name: row.name, code: row.code, price: row.price, quantity: row.quantity  });
+                setFind({ category: row.category, name: row.name, code: row.code, price: row.price, quantity: row.quantity, procurement_rate: row.procurement_rate });
+                setnewItem({ category: row.category, name: row.name, code: row.code, price: row.price, quantity: row.quantity,procurement_rate: row.procurement_rate  });
             } else {
                 setisDisp(false);
-                setFind({ name: "", code: "", price: "", quantity: "" });
+                setFind({category: "", name: "", code: "", price: "", quantity: "", procurement_rate: "" });
             }
         } else {
             setisDisp(false);
@@ -193,6 +208,21 @@ const Update = ({onUpdate})=>{
             setFind(newItem);
         }
     }
+    const [category, setCategory] = useState("");
+    const handleAddCategory = (e) =>{
+        setCategory(e.target.value);
+    }
+    const addCategory = async () =>{
+        if(category === ""){
+            alert("Category is Empty");
+            return;
+        }else{
+            const res = await window.api.addcategory(category);
+            onUpdate();
+        }
+        setCategory("");
+    }
+    
     return (
 
         <div className="flex justify-center  items-center flex-col">
@@ -207,12 +237,14 @@ const Update = ({onUpdate})=>{
                     <th className="px-4 py-2 border border-gray-300 rounded-md">Code</th>
                     <th className="px-4 py-2 border border-gray-300">Name</th>
                     <th className="px-4 py-2 border border-gray-300">Price</th>
+                    <th className="px-4 py-2 border border-gray-300">Procurement</th>
                     <th className="px-4 py-2 border border-gray-300">Quantity</th>
                 </tr>
                 <tr className="text-2xl">
                     <td className="px-4 py-2 border border-gray-300 rounded-md">{find.code}</td>
                     <td className="px-4 py-2 border border-gray-300">{find.name}</td>
                     <td className="px-4 py-2 border border-gray-300">{find.price}</td>
+                    <td className="px-4 py-2 border border-gray-300">{find.procurement_rate}</td>
                     <td className="px-4 py-2 border border-gray-300">{find.quantity}</td>
                 </tr>
             </table>
@@ -224,12 +256,25 @@ const Update = ({onUpdate})=>{
                 <input className=" border border-grey-400 rounded-md px-5"size={15} type="number" min={0}  placeholder="Product Code" id="code" value={newItem.code > 0 ? newItem.code : 0}  onChange={handleUpdateChange}/>
                 </div>
                 <div className="flex flex-row text-2xl justify-center items-center space-x-15">
+                 <label htmlFor="category" className="mr-10">Category</label>
+            <select className="mr-50" id="category" onChange={handleUpdateChange} value={newItem.category}>
+                    <option value="">Select Category</option>
+                {categories.map((cat, index)=>(
+                    <option key={index} value={cat.name}> {cat.name}</option>
+                ))}
+            </select>
+            </div>
+                <div className="flex flex-row text-2xl justify-center items-center space-x-15">
                 <label htmlFor="name">Product Name: </label>
                 <input className=" border border-grey-400 rounded-md px-5" type="text" placeholder="Product Name" id="name" value = {newItem.name} onChange={handleUpdateChange}/>
                 </div>
                 <div className="flex flex-row text-2xl justify-center items-center space-x-15">
                 <label htmlFor="price">Product Price: </label>
                 <input className=" border border-grey-400 rounded-md px-5" type="number" placeholder="Product Price" id="price" value = {newItem.price} onChange={handleUpdateChange}/>
+                </div>
+                <div className="flex flex-row text-2xl justify-center items-center space-x-15">
+                <label htmlFor="price">Procurement Rate: </label>
+                <input className=" border border-grey-400 rounded-md px-5" type="number" placeholder="Procurement Rate" id="procurement_rate" value = {newItem.procurement_rate} onChange={handleUpdateChange}/>
                 </div>
                 <div className="flex flex-row text-2xl justify-center items-center space-x-24 ml-6">
                 <label htmlFor="quantity">Quantity</label>
@@ -239,14 +284,121 @@ const Update = ({onUpdate})=>{
                 Apply Changes
                 </button>
             </div>}
+            <div className="mt-10 flex flex-row space-x-10">
+                <label htmlFor="add_catefory" className="text-3xl font-semibold">Add Category</label>
+                <input type="text" className="text-xl border border-2 rounded" onChange={handleAddCategory} />{/*to add value = {} */}
+                <button onClick={addCategory}>Add Category</button>
+            </div>
         </div>
     );
 }
+const Expense = () =>{
+        const [expenses, setExpenses] = useState([]);
+        const [trigger, setTrigger] = useState(false);
+        useEffect(()=>{
+            
+            const fetchExpense = async () =>{
+                const e = await window.api.getexpenses();
+                e.sort((a, b)=> new Date(b.date) - new Date(a.date));
+                setExpenses(e)
+                const tot = e.reduce((acc, s) => acc + s.amount, 0)
+            }
+            fetchExpense();
+        }, [trigger])
+        const [expense ,setExpense] = useState({
+            description: "",
+            date: "",
+            amount: "",
+        });
+
+        const addExpense = async () =>{
+            if(!expense.amount || !expense.date || !expense.description){
+                alert("Fill All Fields");
+                return;
+            }
+            const res = await window.api.addexpense(expense);
+            setTrigger(prev => !prev);
+            setExpense({description: "",
+            date: "",
+            amount: "",});
+        }
+
+        
+        const deleteExpense = async (desc) => {
+              const confirm = window.confirm("Delete this expense?");
+              if(!confirm) return;
+            await window.api.delexpense(desc);
+            setTrigger(prev => !prev);
+
+        };
+        const toggleExpense = async (desc) => {
+            await window.api.updateexpense(desc);
+            setTrigger(prev => !prev);
+            
+        };
+        const handleExpenseChange = (idx, val) =>{
+            const id = idx;
+            const value = val;
+            setExpense((prev)=>({
+                ...prev,
+                [id]: value,
+            }))
+        }
+        return(
+            <>
+                <h2 className="mt-10 font-bold text-3xl underline mb-8">Expenses</h2>
+                <div className="flex justify-center items-center space-x-10">
+                 <input className="text-xl p-2 border-2 rounded-xl font-semibold border-white shadow bg-red-400 text-white hover:bg-red-700 transition-all duration-200" type="date" id="date" onChange={(e) => handleExpenseChange("date", e.target.value)} value={expense.date}/>
+                <input  className="text-xl p-2 border-2 rounded-xl font-semibold border-white shadow bg-red-400 text-white hover:bg-red-700 transition-all duration-200" type="text" id="description" placeholder="Expense Description" onChange={(e) => handleExpenseChange("description", e.target.value)} value={expense.description}/>
+                <input   className="text-xl p-2 border-2 rounded-xl font-semibold border-white shadow bg-red-400 text-white hover:bg-red-700 transition-all duration-200" type="number" id="amount" placeholder="Amount" onChange={(e) => handleExpenseChange("amount", e.target.value)} value={expense.amount}/>
+                <button className="expense-button" onClick={addExpense}>Add Expense</button>
+                </div>
+                <div className="flex justify-center mt-12">
+                 <table className="w-[800px] overflow-hidden border-2 rounded-2xl shadow-2xl ">
+  <thead>
+    <tr className="bg-indigo-400 text-white">
+      <th className="border px-4 py-2">Date</th>
+      <th className="border px-4 py-2">Description</th>
+      <th className="border px-4 py-2">Amount (₹)</th>
+      <th className="border px-4 py-2">Remove</th>
+    </tr>
+  </thead>
+  <tbody>
+    {expenses && expenses.map((e, index) => (
+      <tr key={index} className="">
+        <td className="border px-4 py-2">{e.date}</td>
+        <td className="border px-4 py-2">{e.description}</td>
+        <td className="border px-4 py-2">₹{e.amount}</td>
+        <td className="border px-4 py-2 space-x-2">
+          <button
+            title="Remove Expense"
+            onClick={() => deleteExpense(e.description)}
+            className="tick-btn"
+          >
+            ✔
+          </button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+                </div>
+            </>
+        )
+    }
 function Catalogue(){
     const [refresh, setRefresh] = useState(false);
     const triggerRefresh = () => {
         setRefresh((prev)=>(!prev));
     }
+    const [categories, setCategories] = useState([]);
+    useEffect(()=>{
+    const getCategories = async () =>{
+        const c = await window.api.getcategories();
+        setCategories(c);
+    }
+    getCategories();
+    }, [refresh])
     const [tab, setTab] = useState("add");
     return(
         <div className="h-screen overflow-hidden">
@@ -258,13 +410,12 @@ function Catalogue(){
             </div>
         </div>
         <div className="absolute top-[15rem] left-0 w-full px-6 z-30 mt-10 bg-white">
-            {(tab == "add") && <Add onUpdate={triggerRefresh}/>}
+            {(tab == "add") && <Add onUpdate={triggerRefresh} categories={categories}/>}
             {(tab == "remove") && <Remove onUpdate={triggerRefresh}/>}
-            {(tab == "update") && <Update onUpdate={triggerRefresh}/>}
+            {(tab == "update") && <Update onUpdate={triggerRefresh} categories={categories}/>}
             <div className="items-center justify-center">
             <Items props={refresh}/>
-            <button className="bg-green-500 text-white px-4 py-2 rounded">Test</button>
-
+            <Expense />
             <div className="mt-15"></div>
             </div>
         </div>
