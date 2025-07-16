@@ -4,14 +4,14 @@ A robust, Electron-based billing and inventory management desktop application, a
 ---
 ## 🚀 Key Features
 
-- 🧾 **Invoice & Billing**: Create detailed bills with GST calculations, line items, quick notes, storage of bills etc.
-- 🧰 **Product & Catalogue Management**: Add/edit/remove products(Quick Access with code, price, qunatity, procurement rate, etc...)  
-- 📊 **Dashboard Analytics**: Profit, revenue, sales trends, and expense analytics via Chart.js.  
-- 💰 **Expense Management**: Log shop expenses and track monthly spending.  
-- 📄 **Invoice Export**: Generate and save printable invoices using jsPDF.  
-- 🛠️ **Local Storage**: Powered by SQLite (`billing.db`) for reliable, offline-first data persistence.  
-- 🎨 **Modern UI**: Clean, responsive React interface with Vite—designed for desktop efficiency and ease of use.  
-- 📦 **Cross-Platform Desktop Support**: Packaged via `electron-builder` for Windows/macOS/Linux.
+- **Invoice & Billing**: Create detailed bills with GST calculations, line items, quick notes, storage of bills etc.
+- **Product & Catalogue Management**: Add/edit/remove products(Quick Access with code, price, qunatity, procurement rate, etc...)  
+- **Dashboard Analytics**: Profit, revenue, sales trends, and expense analytics via Chart.js.  
+- **Expense Management**: Log shop expenses and track monthly spending.  
+- **Invoice Export**: Generate and save printable invoices using jsPDF.  
+- **Local Storage**: Powered by SQLite (`billing.db`) for reliable, offline-first data persistence.  
+- **Modern UI**: Clean, responsive React interface with Vite—designed for desktop efficiency and ease of use.  
+- **Cross-Platform Desktop Support**: Packaged via `electron-builder` for Windows/macOS/Linux.
 
 ---
 
