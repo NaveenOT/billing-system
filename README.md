@@ -26,19 +26,19 @@ A robust, Electron-based billing and inventory management desktop application, a
 - **Chart.js** – Charts for sales and expense analytics  
 - **jsPDF** – Client-side PDF generation  
 - **electron-builder** – Packaging for distributions
-- 
-#Installation
+
+## Installation
 - Clone the Repository
 - Install Dependencies: npm install
 - npm run build 
 - npm run electron:build
 
-##🛡️ Data & Configuration
+## 🛡️ Data & Configuration
 
 All data is saved in billing.db, stored alongside the app.
 To backup or migrate, simply copy this file.
 Settings (GST %, printer config) are stored in local JSON config files.
 
-##👤 Author
+## 👤 Author
 - Naveen O.T
 - Built and maintained for a live retail shop in Chennai.
