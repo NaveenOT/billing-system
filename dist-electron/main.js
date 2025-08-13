@@ -69,9 +69,9 @@ ipcMain.handle("delexpense", (event, desc) => {
 });
 ipcMain.handle("addtransaction", (event, item) => {
   const tid = nanoid(10);
-  const insert = db.prepare(`INSERT INTO transactions(tid, cust_name, phone_no, amount, ttype, notes, items_json)
-                              VALUES(?, ?, ?, ?, ?, ?, ?);`);
-  insert.run(tid, item.cust_name, item.phno, item.amount, item.ttype, item.notes, item.items_json);
+  const insert = db.prepare(`INSERT INTO transactions(tid, cust_name, phone_no, amount,t_date, ttype, notes, items_json)
+                              VALUES(?, ?, ?, ?, ?, ?, ?, ?);`);
+  insert.run(tid, item.cust_name, item.phno, item.amount, (/* @__PURE__ */ new Date()).toISOString(), item.ttype, item.notes, item.items_json);
   return tid;
 });
 ipcMain.handle("gettransactions", () => {

@@ -26,7 +26,7 @@ function Dashboard(){
             const t = await window.api.gettransactions();
             const parsed = t.map(tx => ({
                 ...tx,
-                t_date: isNaN(tx.date) ? new Date(): new Date(tx.date),
+                t_date: tx.t_date && !isNaN(new Date(tx.t_date)) ? new Date(tx.t_date) : null,
                 amount: parseFloat(tx.amount),
                 items_json: JSON.parse(tx.items_json)
             }));
@@ -120,7 +120,7 @@ function Dashboard(){
     const getDayRevenue = (soldItems) => {
       const today = new Date().toISOString().split('T')[0];
       return soldItems.reduce((sum, item) =>
-        item.date === today ? sum + item.price : sum, 0);
+        item.date === today ? sum + item.price * item.quantity : sum, 0);
     };
     const getInventory = (catalogue) =>{
         const cat = {};

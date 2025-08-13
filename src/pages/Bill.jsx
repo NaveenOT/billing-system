@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import jsPDFInvoiceTemplate, { OutputType, jsPDF } from "jspdf-invoice-template";
 import logo from '../assets/test.jpg';
 import Swal from "sweetalert2";
-
 import './ButtonStyle.css';
+
 function Bill(){
     const searchRef = useRef(null);
     const [items, setItems] = useState([]);
@@ -12,6 +12,17 @@ function Bill(){
     const [filtered, setFiltered] = useState([]);
     const [billItems, setBillItems] = useState([]);
     const [total, setTotal] = useState(0);
+    const [isAdditional, setisAdditional] = useState(false);
+    const [additionalItem, setAdditionalItem] = useState({
+        code: "A",
+        category: "Additional",
+        name: "",
+        subtotal: 0,
+        price: 0,
+        quantity: 1,
+        billQuantity: 1,
+
+    });
 
     useEffect(()=>{
         getItems();
@@ -69,7 +80,29 @@ function Bill(){
                 alert("Item Out of Stock");}
         }
     }
-    
+    const handleAdditional = () =>{
+        if(additionalItem.name == "" || additionalItem.price <= 0){
+            alert("Fill All Values");
+            return;
+        }
+        const newItem = {...additionalItem,
+            subtotal: parseFloat(additionalItem.price) * (additionalItem.billQuantity || 1),
+            quantity: additionalItem.quantity || 1,
+            procurement_rate: parseFloat(additionalItem.price),
+         }
+        setBillItems(prev => [
+            ...prev,
+            newItem
+        ])
+        
+        setAdditionalItem({code: "A",
+        category: "Additional",
+        name: "",
+        subtotal: 0,
+        price: 0,
+        quantity: 1,
+        billQuantity: 1})
+    }
     const handleSearch = (e) =>{
         const search = e.target.value;
         setSearchItem(search);
@@ -95,29 +128,35 @@ function Bill(){
             prevItems.map((item)=>{
                 const stock = findItemStock(code);
                 if(item.code === code){
-                    return {...item, billQuantity: Math.min(stock, item.billQuantity + 1)}
+                    return {...item, billQuantity: Math.min(stock, (parseFloat(item.billQuantity) || 0) + 1)}
                 }
                 return item;
             })
         )
     };
-    const handleQuantityChange = (code, e) =>{
-        const quant = parseFloat(e.target.value, 10) || 0;
-        const stock = findItemStock(code);
-        const newQt = Math.min(stock, quant);
-        setBillItems((prevItems)=>
-            prevItems.map((item)=>
-                item.code === code ? {...item, billQuantity: newQt.toFixed(2) } : item
-            )
-        )
+   const handleQuantityChange = (code, e) => {
+    let val = e.target.value;
+
+    if (/^0\d/.test(val)) {
+        val = val.replace(/^0+/, '');
     }
+    const quant = parseFloat(val) || 0;
+    const stock = findItemStock(code);
+    const newQt = Math.min(stock, quant);
+
+    setBillItems((prevItems) =>
+        prevItems.map((item) =>
+            item.code === code ? { ...item, billQuantity: newQt } : item
+        )
+    );
+};
     const decQuant = (code) => {
         const stock = findItemStock(code);
         setBillItems((prevItems) =>
             prevItems
                 .map((item) =>
                     item.code === code
-                        ? { ...item, billQuantity: Math.max(0, item.billQuantity - 1) }
+                        ? { ...item, billQuantity: Math.max(0, (parseFloat(item.billQuantity)|| 0) - 1) }
                         : item
                 )
                 .filter((item) => item.billQuantity > 0)
@@ -159,12 +198,13 @@ function Bill(){
         }
         for(let item of billItems){
             const dbitem = items.find((i)=>item.code == i.code);
+            if(!dbitem) continue;
             const newStock = dbitem.quantity - item.billQuantity;
             dbitem.quantity = newStock;
             const result = await window.api.updateitems(dbitem);
         }
         //(tid, cust_name, phone_no, amount, ttype, notes
-      
+    
     await getItems();
     const tid = await window.api.addtransaction(trans);   
 //      const generateID = (len = 8) => [...Array(len)].map(() => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".charAt(Math.floor(Math.random() * 62))).join('');
@@ -268,24 +308,37 @@ function Bill(){
         <div className="mb-15">
         <div className="text-xl absolute top-[6.5rem] flex flex-col space-y-10 justify-center items-center left-150">
         <h1 className="mr-[12em]">Billing</h1>
-            <div ref={searchRef}>
-            <div className="flex flex-row font-2xl justify-center items-center  space-x-15 mr-120">
-            <label className="text-2xl font-semibold">Enter Here: </label>
-            <input type="text" placeholder="Search code or Name"
-             onChange={handleSearch}
-             className="text-2xl font-semibold p-2 border rounded-2xl" 
-            />
-            </div>
-            {showDropdown && 
-            (<ul  className="text-2xl mb-8 bg-white font-semibold mr-[32rem] p-4 border rounded-2xl max-h-86   shadow-2xl">
-                <li className="font-bold border-b pb-1 mb-1"> Code |Category| Name | Price | Quantity</li>
-                {filtered.map((item, index)=>(
-                    <li key={index} className="border-1 rounded-2xl cursor-pointer hover:bg-gray-300 w-80" onClick={()=>addItem(item)}>{item.code} |{item.category}|{item.name} |{item.price}| {item.quantity} </li>
-                    ))}
-            </ul>)
-            }
-        </div>
-        </div>
+            <div ref={searchRef} className="w-full flex flex-col items-center justify-center mr-160">
+  
+  <div className="flex items-center space-x-4 mb-4">
+    <label className="text-2xl font-semibold whitespace-nowrap">
+      Enter Here:
+    </label>
+    <input
+      type="text"
+      placeholder="Search code or Name"
+      onChange={handleSearch}
+      className="text-lg font-medium p-3 border border-gray-400 rounded-xl shadow-sm w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+  </div>
+    {showDropdown && (
+    <ul className="w-11/12 max-w-3xl bg-white border border-gray-300 rounded-xl shadow-2xl overflow-y-auto max-h-96">
+      <li className="sticky top-0 bg-gray-100 font-bold border-b px-4 py-2">
+        Code | Category | Name | Price | Quantity
+      </li>
+      {filtered.map((item, index) => (
+        <li
+          key={index}
+          className="px-4 py-2 cursor-pointer hover:bg-gray-200 transition"
+          onClick={() => addItem(item)}
+        >
+          {item.code} | {item.category} | {item.name} | {item.price} | {item.quantity}
+        </li>
+      ))}
+    </ul>
+  )}
+</div>        </div>
+           
         <div>
             {billItems.length === 0 ? 
                 <h3 className="text-4xl">No Items Added</h3>
@@ -305,14 +358,26 @@ function Bill(){
                     </tr>
                     </thead>
                     <tbody>
+
                     {billItems.map((item, index) => (
+        
                     <tr key={index} className="text-2xl font-mono group hover:bg-amber-100">
                         <td className="bg-blue-200 p-3 border text-center group-hover:bg-amber-100">{index + 1}</td>
                         <td className="p-3 border text-center group-hover:bg-amber-100">{item.code}</td>
                         <td className="p-3 border text-center group-hover:bg-amber-100">{item.category}</td>
                          <td className="p-3 border text-center group-hover:bg-amber-100">{item.name}</td>
                         <td className="p-3 border text-center group-hover:bg-amber-100">{item.price}</td>
-                        <td className="p-3 border text-center group-hover:bg-amber-100"><input type="text"  className="text-center" min={0} placeholder="Quantity"  value={item.billQuantity}onChange={(e)=>handleQuantityChange(item.code, e)}/></td>
+                        <td className="p-3 border text-center group-hover:bg-amber-100">
+                            <input
+  type="number"
+  step="0.01"  // allow decimals
+  className="text-center"
+  min={0}
+  placeholder="Quantity"
+  value={item.billQuantity}
+  onChange={(e) => handleQuantityChange(item.code, e)}
+/>
+                        </td>
                         <td className="p-3 border text-center group-hover:bg-amber-100">{item.subtotal}</td>
                         <td className="flex flex-row space-x-5 justify-center py-3 items-center border">
                         <button className="inc-button" type="button" onClick={() => incQuant(item.code)} disabled={item.billQuantity >= findItemStock(item.code)}>+</button>
@@ -334,6 +399,57 @@ function Bill(){
                 </div>
             }
             </div>
+             <div>
+            <input type="checkbox" checked={isAdditional} onChange={()=>setisAdditional(prev => !prev)}></input>
+            <label>Additional Charges</label>
+            {isAdditional && (
+    <tr className="text-2xl font-mono group bg-yellow-50">
+        <td className="bg-blue-200 p-3 border text-center">A</td>
+        <td className="p-3 border text-center">--</td>
+        <td className="p-3 border text-center">Additional</td>
+        <td className="p-3 border text-center">
+            <input
+                type="text"
+                className="border p-2 rounded w-full"
+                placeholder="Enter charge name"
+                value={additionalItem.name || ""}
+                onChange={(e) =>
+                    setAdditionalItem(prev => ({ 
+                        ...prev, 
+                        name: e.target.value, 
+                        category: "Additional", 
+                        billQuantity: 1 
+                    }))
+                }
+            />
+        </td>
+        <td className="p-3 border text-center">
+            <input
+                type="number"
+                step="0.01"
+                className="border p-2 rounded w-full text-center"
+                placeholder="Cost"
+                value={additionalItem.price || ""}
+                onChange={(e) =>
+                    setAdditionalItem(prev => ({ 
+                        ...prev, 
+                        price: parseFloat(e.target.value) || 0,
+                        subtotal: parseFloat(e.target.value) || 0 
+                    }))
+                }
+            />
+        </td>
+
+        <td className="p-3 border text-center">1</td>
+
+        <td className="p-3 border text-center">
+            {additionalItem.quantity * parseFloat(additionalItem.price || 0)}
+        </td>
+        <td className="p-3 border text-center"><button className="inc-button" onClick={handleAdditional}>Add</button></td>
+    </tr>
+        )}
+            </div>
+
             
         </div>
         </>
