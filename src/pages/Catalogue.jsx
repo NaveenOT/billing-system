@@ -319,8 +319,9 @@ const Update = ({onUpdate, categories})=>{
         }else{
             const res = await window.api.addcategory(category);
             onUpdate();
+            setCategory("");
+            alert("Category Added");
         }
-        setCategory("");
     }
     
     return (

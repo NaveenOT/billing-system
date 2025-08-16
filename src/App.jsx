@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BrowserRouter, Route, Routes, Link } from 'react-router-dom';
+import { HashRouter, BrowserRouter, Route, Routes, Link } from 'react-router-dom';
 import Dashboard from './pages/Dashboard.jsx';
 import Bill from "./pages/Bill.jsx";
 import Catalogue from "./pages/Catalogue.jsx";
@@ -11,7 +11,7 @@ function App() {
   return (
     <>
       
-     <BrowserRouter>
+     <HashRouter>
       <div>
       <Navbar/>
       <Routes>
@@ -20,7 +20,7 @@ function App() {
         <Route path='/catalogue' element={<Catalogue />} />
       </Routes>
       </div>
-     </BrowserRouter>
+     </HashRouter>
      
     </>
   )

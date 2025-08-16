@@ -1,151 +1,82 @@
-import { ipcMain, app, BrowserWindow, screen } from "electron";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-import { webcrypto } from "node:crypto";
-const urlAlphabet = "useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict";
-const POOL_SIZE_MULTIPLIER = 128;
-let pool, poolOffset;
-function fillPool(bytes) {
-  if (!pool || pool.length < bytes) {
-    pool = Buffer.allocUnsafe(bytes * POOL_SIZE_MULTIPLIER);
-    webcrypto.getRandomValues(pool);
-    poolOffset = 0;
-  } else if (poolOffset + bytes > pool.length) {
-    webcrypto.getRandomValues(pool);
-    poolOffset = 0;
-  }
-  poolOffset += bytes;
+import { app as l, ipcMain as s, BrowserWindow as u, screen as m } from "electron";
+import { createRequire as L } from "node:module";
+import { fileURLToPath as S } from "node:url";
+import o from "node:path";
+import { webcrypto as T } from "node:crypto";
+const _ = "useandom-26T198340PX75pxJACKVERYMINDBUSHWOLF_GQZbfghjklqvwyzrict", f = 128;
+let i, E;
+function h(t) {
+  !i || i.length < t ? (i = Buffer.allocUnsafe(t * f), T.getRandomValues(i), E = 0) : E + t > i.length && (T.getRandomValues(i), E = 0), E += t;
 }
-function nanoid(size = 21) {
-  fillPool(size |= 0);
-  let id = "";
-  for (let i = poolOffset - size; i < poolOffset; i++) {
-    id += urlAlphabet[pool[i] & 63];
-  }
-  return id;
+function A(t = 21) {
+  h(t |= 0);
+  let e = "";
+  for (let r = E - t; r < E; r++)
+    e += _[i[r] & 63];
+  return e;
 }
-const require2 = createRequire(import.meta.url);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-process.env.APP_ROOT = path.join(__dirname, "..");
-const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
-const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
-const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
-let win;
-const Database = require2("better-sqlite3");
-const db = new Database("billing.db");
-db.exec(`CREATE TABLE IF NOT EXISTS categories(name TEXT);`);
-db.exec(
-  `CREATE TABLE IF NOT EXISTS items (category TEXT, name TEXT NOT NULL,code NUMBER PRIMARY KEY ,price NUMERIC NOT NULL, quantity NUMERIC, procurement_rate NUMERIC);`
+const O = L(import.meta.url), d = o.dirname(S(import.meta.url));
+process.env.APP_ROOT = o.join(d, "..");
+const p = process.env.VITE_DEV_SERVER_URL, C = o.join(process.env.APP_ROOT, "dist-electron"), R = o.join(process.env.APP_ROOT, "dist");
+process.env.VITE_PUBLIC = p ? o.join(process.env.APP_ROOT, "public") : R;
+let a;
+const g = O("better-sqlite3"), N = o.join(l.getPath("userData"), "billing.db"), n = new g(N);
+n.exec("CREATE TABLE IF NOT EXISTS categories(name TEXT);");
+n.exec(
+  "CREATE TABLE IF NOT EXISTS items (category TEXT, name TEXT NOT NULL,code NUMBER PRIMARY KEY ,price NUMERIC NOT NULL, quantity NUMERIC, procurement_rate NUMERIC);"
 );
-db.exec(
-  `CREATE TABLE IF NOT EXISTS transactions(tid TEXT PRIMARY KEY, cust_name TEXT, phone_no TEXT, amount NUMERIC NOT NULL, t_date DATETIME DEFAULT CURRENT_TIMESTAMP, ttype TEXT, notes TEXT, items_json TEXT);`
+n.exec(
+  "CREATE TABLE IF NOT EXISTS transactions(tid TEXT PRIMARY KEY, cust_name TEXT, phone_no TEXT, amount NUMERIC NOT NULL, t_date DATETIME DEFAULT CURRENT_TIMESTAMP, ttype TEXT, notes TEXT, items_json TEXT);"
 );
-db.exec(
-  `CREATE TABLE IF NOT EXISTS expenses(description TEXT, date DATETIME DEFAULT CURRENT_TIMESTAMP, amount NUMERIC, COMPLETED BOOLEAN DEFAULT false);`
+n.exec(
+  "CREATE TABLE IF NOT EXISTS expenses(description TEXT, date DATETIME DEFAULT CURRENT_TIMESTAMP, amount NUMERIC, COMPLETED BOOLEAN DEFAULT false);"
 );
-ipcMain.handle("getexpenses", () => {
-  const select = db.prepare(`SELECT * FROM expenses;`);
-  return select.all();
-});
-ipcMain.handle("addexpense", (event, expense) => {
-  const insert = db.prepare(`INSERT INTO expenses (description, date, amount) VALUES(?, ?, ?);`);
-  const res = insert.run(expense.description, expense.date, expense.amount);
-  return { success: true, id: res.lastInsertRowId };
-});
-ipcMain.handle("updateexpense", (event, expense) => {
-  const find = db.prepare(`UPDATE expenses
+s.handle("getexpenses", () => n.prepare("SELECT * FROM expenses;").all());
+s.handle("addexpense", (t, e) => ({ success: !0, id: n.prepare("INSERT INTO expenses (description, date, amount) VALUES(?, ?, ?);").run(e.description, e.date, e.amount).lastInsertRowId }));
+s.handle("updateexpense", (t, e) => ({ success: !0, id: n.prepare(`UPDATE expenses
     SET completed = true
     WHERE description = ?;
-    `);
-  const res = find.run(expense);
-  return { success: true, id: res.changes };
+    `).run(e).changes }));
+s.handle("delexpense", (t, e) => ({ success: !0, id: n.prepare("DELETE FROM expenses WHERE description = ?;").run(e).lastDeleteRowId }));
+s.handle("addtransaction", (t, e) => {
+  const r = A(10);
+  return n.prepare(`INSERT INTO transactions(tid, cust_name, phone_no, amount,t_date, ttype, notes, items_json)
+                              VALUES(?, ?, ?, ?, ?, ?, ?, ?);`).run(r, e.cust_name, e.phno, e.amount, (/* @__PURE__ */ new Date()).toISOString(), e.ttype, e.notes, e.items_json), r;
 });
-ipcMain.handle("delexpense", (event, desc) => {
-  const del = db.prepare(`DELETE FROM expenses WHERE description = ?;`);
-  const result = del.run(desc);
-  return { success: true, id: result.lastDeleteRowId };
-});
-ipcMain.handle("addtransaction", (event, item) => {
-  const tid = nanoid(10);
-  const insert = db.prepare(`INSERT INTO transactions(tid, cust_name, phone_no, amount,t_date, ttype, notes, items_json)
-                              VALUES(?, ?, ?, ?, ?, ?, ?, ?);`);
-  insert.run(tid, item.cust_name, item.phno, item.amount, (/* @__PURE__ */ new Date()).toISOString(), item.ttype, item.notes, item.items_json);
-  return tid;
-});
-ipcMain.handle("gettransactions", () => {
-  const select = db.prepare(`SELECT * FROM transactions;`);
-  return select.all();
-});
-ipcMain.handle("additems", (event, item) => {
-  const insert = db.prepare(`INSERT INTO items (category, name, code, price, quantity, procurement_rate) VALUES(?, ?, ?, ?, ?, ?);`);
-  const result = insert.run(item.category, item.name, item.code, item.price, item.quantity, item.procurement_rate);
-  return { success: true, id: result.lastInsertRowId };
-});
-ipcMain.handle("addcategory", (event, name) => {
-  const insert = db.prepare(`INSERT INTO categories (name) VALUES(?);`);
-  const res = insert.run(name);
-  return { success: true, id: res.lastInsertRowId };
-});
-ipcMain.handle("getcategories", () => {
-  const select = db.prepare(`SELECT * FROM categories;`);
-  return select.all();
-});
-ipcMain.handle("delitems", (event, code) => {
-  const del = db.prepare(`DELETE FROM items WHERE code = ?;`);
-  const result = del.run(code);
-  return { success: true, id: result.lastDeleteRowId };
-});
-ipcMain.handle("getitems", () => {
-  const select = db.prepare(`SELECT * FROM items;`);
-  return select.all();
-});
-ipcMain.handle("finditems", (event, code) => {
-  const find = db.prepare(`SELECT * from items WHERE code = ?;`);
-  return find.get(code);
-});
-ipcMain.handle("updateitems", (event, item) => {
-  const find = db.prepare(`UPDATE items
+s.handle("gettransactions", () => n.prepare("SELECT * FROM transactions;").all());
+s.handle("additems", (t, e) => ({ success: !0, id: n.prepare("INSERT INTO items (category, name, code, price, quantity, procurement_rate) VALUES(?, ?, ?, ?, ?, ?);").run(e.category, e.name, e.code, e.price, e.quantity, e.procurement_rate).lastInsertRowId }));
+s.handle("addcategory", (t, e) => ({ success: !0, id: n.prepare("INSERT INTO categories (name) VALUES(?);").run(e).lastInsertRowId }));
+s.handle("getcategories", () => n.prepare("SELECT * FROM categories;").all());
+s.handle("delitems", (t, e) => ({ success: !0, id: n.prepare("DELETE FROM items WHERE code = ?;").run(e).lastDeleteRowId }));
+s.handle("getitems", () => n.prepare("SELECT * FROM items;").all());
+s.handle("finditems", (t, e) => n.prepare("SELECT * from items WHERE code = ?;").get(e));
+s.handle("updateitems", (t, e) => ({ success: !0, id: n.prepare(`UPDATE items
     SET name = ?, price = ?, quantity = ?, category = ?, procurement_rate = ?
     WHERE code = ?;
-    `);
-  const res = find.run(item.name, item.price, item.quantity, item.category, item.procurement_rate, item.code);
-  return { success: true, id: res.changes };
-});
-function createWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-  win = new BrowserWindow({
-    width,
-    height,
-    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+    `).run(e.name, e.price, e.quantity, e.category, e.procurement_rate, e.code).changes }));
+function I() {
+  const { width: t, height: e } = m.getPrimaryDisplay().workAreaSize;
+  a = new u({
+    width: t,
+    height: e,
+    title: "IvenBill",
+    icon: o.join(d, "public", "icon.png"),
     webPreferences: {
-      preload: path.join(__dirname, "preload.mjs")
+      preload: o.join(d, "preload.mjs")
     }
-  });
-  win.webContents.on("did-finish-load", () => {
-    win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
-  });
-  if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL);
-  } else {
-    win.loadFile(path.join(RENDERER_DIST, "index.html"));
-  }
+  }), a.webContents.on("did-finish-load", () => {
+    a == null || a.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+  }), p ? a.loadURL(p) : a.loadFile(o.join(R, "index.html"));
 }
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-    win = null;
-  }
+l.on("window-all-closed", () => {
+  process.platform !== "darwin" && (l.quit(), a = null);
 });
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
+l.on("activate", () => {
+  u.getAllWindows().length === 0 && I();
 });
-app.whenReady().then(createWindow);
+l.whenReady().then(I);
 export {
-  MAIN_DIST,
-  RENDERER_DIST,
-  VITE_DEV_SERVER_URL
+  C as MAIN_DIST,
+  R as RENDERER_DIST,
+  p as VITE_DEV_SERVER_URL
 };

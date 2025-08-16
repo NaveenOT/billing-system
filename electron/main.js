@@ -29,7 +29,8 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win;
 
 const Database = require('better-sqlite3');
-const db = new Database('billing.db');
+const dbpath = path.join(app.getPath("userData"), "billing.db");
+const db = new Database(dbpath);
 /*
 try{
   db.exec('SELECT quantity from items LIMI 1').get();
@@ -129,8 +130,8 @@ function createWindow() {
   win = new BrowserWindow({
     width: width,
     height: height,
-    
-    icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
+    title: "IvenBill",
+    icon: path.join(__dirname, 'public', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
     },

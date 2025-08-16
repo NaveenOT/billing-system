@@ -246,14 +246,12 @@ function Bill(){
             },
             business: {
                 name: "AV Traders",
-                address: "Address",
-                phone: "Number",
-                email: "avtraders@gmail.com",
-                website: "av.com",
+                address: "Door No 2/1121, 5th Street, Kagithapuram, Kovilambakkam, Chennai-600117",
+                phone: "",
             },
             invoice: {
-                label: "Invoice test",
-                num: 1,
+                label: "Invoice",
+                //num: 1,
                 invDate: `${date.year}/${date.month}/${date.day} ${date.time}`,
                 invGenDate: tid,
                 headerBorder: false,
@@ -280,11 +278,11 @@ function Bill(){
                     item.name,
                     item.price,
                     item.billQuantity,
-                    item.price * item.billQuantity
+                    "Rs. " + (item.price * item.billQuantity).toString(),
                 ])),
                 additionalRows: [
                     {
-                        col1: `Total: ${total}`,
+                        col1: `Total: Rs. ${total}`,
                         style: {
                             fontSize: 10,
                         }
@@ -399,11 +397,13 @@ function Bill(){
                 </div>
             }
             </div>
-             <div>
+             <div className="text-xl">
+             <div className="mb-5 mt-5">
             <input type="checkbox" checked={isAdditional} onChange={()=>setisAdditional(prev => !prev)}></input>
             <label>Additional Charges</label>
+            </div>
             {isAdditional && (
-    <tr className="text-2xl font-mono group bg-yellow-50">
+    <tr className="text-2xl font-mono group bg-yellow-50 ">
         <td className="bg-blue-200 p-3 border text-center">A</td>
         <td className="p-3 border text-center">--</td>
         <td className="p-3 border text-center">Additional</td>
